@@ -1,25 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/Layout';
-import Home from './pages/Home';
-import About from './pages/About';
-import Services from './pages/Services';
-import Contact from './pages/Contact';
-import Chatbot from './pages/Chatbot';
+import VoiceChatbot from './components/VoiceChatbot';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="services" element={<Services />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="chatbot" element={<Chatbot />} />
-        </Route>
-      </Routes>
-    </Router>
+    <div className="min-h-screen bg-gray-50">
+      <VoiceChatbot />
+    </div>
   );
 }
 
