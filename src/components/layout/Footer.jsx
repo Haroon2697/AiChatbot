@@ -52,6 +52,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/chatbot" className="text-gray-300 hover:text-white transition-colors">
+                  AI Chatbot
+                </Link>
+              </li>
+              <li>
                 <Link to="/contact" className="text-gray-300 hover:text-white transition-colors">
                   Contact
                 </Link>

@@ -32,6 +32,12 @@ const Header = () => {
               Services
             </Link>
             <Link 
+              to="/chatbot" 
+              className="hover:text-blue-200 transition-colors font-medium"
+            >
+              AI Chatbot
+            </Link>
+            <Link 
               to="/contact" 
               className="hover:text-blue-200 transition-colors font-medium"
             >
