@@ -7,8 +7,11 @@ const VoiceChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [inputMode, setInputMode] = useState('voice'); // 'voice' or 'text'
+  const [textInput, setTextInput] = useState('');
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const textInputRef = useRef(null);
 
   const synth = window.speechSynthesis;
 
@@ -43,6 +46,7 @@ const VoiceChatbot = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setError("Speech recognition not supported in this browser!");
+      setInputMode('text');
       return;
     }
 
@@ -93,6 +97,26 @@ const VoiceChatbot = () => {
     setListening(false);
   };
 
+  const handleTextSubmit = async (e) => {
+    e.preventDefault();
+    if (!textInput.trim() || isLoading) return;
+
+    const userText = textInput.trim();
+    addMessage('user', userText);
+    setTextInput('');
+    setIsLoading(true);
+    
+    try {
+      const botReply = await getBotReply(userText);
+      addMessage('bot', botReply);
+      speak(botReply);
+    } catch (err) {
+      addMessage('bot', "Sorry, I couldn't process that request. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getBotReply = async (prompt) => {
     try {
       const response = await axios.post(
@@ -139,6 +163,11 @@ const VoiceChatbot = () => {
     setIsDarkMode(!isDarkMode);
   };
 
+  const toggleInputMode = () => {
+    setInputMode(inputMode === 'voice' ? 'text' : 'voice');
+    setError('');
+  };
+
   return (
     <div className={`flex flex-col h-screen transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
@@ -154,9 +183,23 @@ const VoiceChatbot = () => {
             </div>
             <h1 className={`text-xl font-semibold transition-colors duration-200 ${
               isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>AI Voice Assistant</h1>
+            }`}>AI Assistant</h1>
           </div>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleInputMode}
+              className={`px-3 py-1 rounded-lg text-sm transition-colors duration-200 ${
+                inputMode === 'voice'
+                  ? isDarkMode 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-blue-500 text-white'
+                  : isDarkMode 
+                    ? 'bg-gray-700 text-gray-300' 
+                    : 'bg-gray-200 text-gray-700'
+              }`}
+            >
+              {inputMode === 'voice' ? '🎤 Voice' : '⌨️ Text'}
+            </button>
             <button
               onClick={toggleTheme}
               className={`p-2 rounded-lg transition-colors duration-200 ${
@@ -186,14 +229,19 @@ const VoiceChatbot = () => {
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-200 ${
               isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
             }`}>
-              <span className="text-2xl">🎤</span>
+              <span className="text-2xl">{inputMode === 'voice' ? '🎤' : '⌨️'}</span>
             </div>
             <h2 className={`text-xl font-semibold mb-2 transition-colors duration-200 ${
               isDarkMode ? 'text-white' : 'text-gray-900'
             }`}>Start a conversation</h2>
             <p className={`transition-colors duration-200 ${
               isDarkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>Click the microphone button below to begin talking with AI</p>
+            }`}>
+              {inputMode === 'voice' 
+                ? 'Click the microphone button below to begin talking with AI'
+                : 'Type your message below to start chatting with AI'
+              }
+            </p>
           </div>
         )}
         
@@ -253,34 +301,69 @@ const VoiceChatbot = () => {
       <div className={`border-t transition-colors duration-200 ${
         isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
       } px-6 py-4`}>
-        <div className="flex items-center justify-center space-x-4">
-          <button
-            onClick={listening ? stopListening : startListening}
-            disabled={isLoading}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
-              listening 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <span className="text-xl">
-              {listening ? '⏹️' : '🎤'}
-            </span>
-          </button>
-          
-          <div className="flex-1 max-w-2xl">
-            <div className={`text-center text-sm transition-colors duration-200 ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              {listening 
-                ? 'Listening... Speak now!' 
-                : isLoading 
-                  ? 'Processing your request...'
-                  : 'Click the microphone to start talking'
-              }
+        {inputMode === 'voice' ? (
+          <div className="flex items-center justify-center space-x-4">
+            <button
+              onClick={listening ? stopListening : startListening}
+              disabled={isLoading}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+                listening 
+                  ? 'bg-red-500 hover:bg-red-600 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span className="text-xl">
+                {listening ? '⏹️' : '🎤'}
+              </span>
+            </button>
+            
+            <div className="flex-1 max-w-2xl">
+              <div className={`text-center text-sm transition-colors duration-200 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                {listening 
+                  ? 'Listening... Speak now!' 
+                  : isLoading 
+                    ? 'Processing your request...'
+                    : 'Click the microphone to start talking'
+                }
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <form onSubmit={handleTextSubmit} className="flex items-center space-x-4">
+            <div className="flex-1 max-w-2xl mx-auto">
+              <div className="flex items-center space-x-3">
+                <input
+                  ref={textInputRef}
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  placeholder="Type your message here..."
+                  disabled={isLoading}
+                  className={`flex-1 px-4 py-3 rounded-lg border transition-colors duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                <button
+                  type="submit"
+                  disabled={!textInput.trim() || isLoading}
+                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    textInput.trim() && !isLoading
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : isDarkMode
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
