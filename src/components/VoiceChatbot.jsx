@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import LoadingSpinner from './ui/LoadingSpinner';
+import LanguageSelector from './features/LanguageSelector';
+import MicrophoneAnimation from './ui/MicrophoneAnimation';
+import MessageAvatar from './ui/MessageAvatar';
+import OfflineIndicator from './features/OfflineIndicator';
 
 const VoiceChatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -9,6 +14,7 @@ const VoiceChatbot = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [inputMode, setInputMode] = useState('voice'); // 'voice' or 'text'
   const [textInput, setTextInput] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textInputRef = useRef(null);
@@ -51,7 +57,7 @@ const VoiceChatbot = () => {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
+    recognition.lang = selectedLanguage === 'en' ? 'en-US' : selectedLanguage;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.continuous = false;
@@ -126,7 +132,7 @@ const VoiceChatbot = () => {
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful AI assistant. Keep your responses concise and friendly.'
+              content: `You are a helpful AI assistant. Respond in ${selectedLanguage} language. Keep your responses concise and friendly.`
             },
             { role: 'user', content: prompt }
           ],
@@ -168,10 +174,17 @@ const VoiceChatbot = () => {
     setError('');
   };
 
+  const handleLanguageChange = (languageCode) => {
+    setSelectedLanguage(languageCode);
+  };
+
   return (
     <div className={`flex flex-col h-screen transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
     }`}>
+      {/* Offline Indicator */}
+      <OfflineIndicator isDarkMode={isDarkMode} />
+
       {/* Header */}
       <div className={`border-b transition-colors duration-200 ${
         isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -186,6 +199,11 @@ const VoiceChatbot = () => {
             }`}>AI Assistant</h1>
           </div>
           <div className="flex items-center space-x-4">
+            <LanguageSelector 
+              selectedLanguage={selectedLanguage}
+              onLanguageChange={handleLanguageChange}
+              isDarkMode={isDarkMode}
+            />
             <button
               onClick={toggleInputMode}
               className={`px-3 py-1 rounded-lg text-sm transition-colors duration-200 ${
@@ -246,41 +264,16 @@ const VoiceChatbot = () => {
         )}
         
         {messages.map((message, index) => (
-          <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-3xl px-4 py-3 rounded-lg transition-colors duration-200 ${
-              message.sender === 'user' 
-                ? 'bg-blue-500 text-white' 
-                : isDarkMode 
-                  ? 'bg-gray-700 text-gray-200 border border-gray-600'
-                  : 'bg-white border border-gray-200 text-gray-800'
-            }`}>
-              <div className="text-sm leading-relaxed">{message.text}</div>
-            </div>
-          </div>
+          <MessageAvatar 
+            key={index} 
+            message={message} 
+            isDarkMode={isDarkMode}
+          />
         ))}
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className={`px-4 py-3 rounded-lg transition-colors duration-200 ${
-              isDarkMode 
-                ? 'bg-gray-700 border border-gray-600 text-gray-200' 
-                : 'bg-white border border-gray-200 text-gray-800'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    isDarkMode ? 'bg-gray-400' : 'bg-gray-400'
-                  }`}></div>
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    isDarkMode ? 'bg-gray-400' : 'bg-gray-400'
-                  }`} style={{animationDelay: '0.1s'}}></div>
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    isDarkMode ? 'bg-gray-400' : 'bg-gray-400'
-                  }`} style={{animationDelay: '0.2s'}}></div>
-                </div>
-                <span className="text-sm">AI is thinking...</span>
-              </div>
-            </div>
+            <LoadingSpinner type="dots" isDarkMode={isDarkMode} />
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -306,15 +299,9 @@ const VoiceChatbot = () => {
             <button
               onClick={listening ? stopListening : startListening}
               disabled={isLoading}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
-                listening 
-                  ? 'bg-red-500 hover:bg-red-600 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`transition-all duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <span className="text-xl">
-                {listening ? '⏹️' : '🎤'}
-              </span>
+              <MicrophoneAnimation isListening={listening} isDarkMode={isDarkMode} />
             </button>
             
             <div className="flex-1 max-w-2xl">
