@@ -3,7 +3,7 @@ import VoiceChatbot from './components/VoiceChatbot';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <VoiceChatbot />
     </div>
   );
